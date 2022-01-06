@@ -8,13 +8,6 @@ from conans.tools import os_info, SystemPackageTool
 from conan.tools.cmake import CMakeToolchain
 from pathlib import PurePath, PurePosixPath
 
-def use_package_revision_mode_for_all_requirements(conanfile):
-        # We expect no compatibility guarantees by default.
-        conanfile.info.requires.package_revision_mode()
-        conanfile.info.tool_requires.package_revision_mode()
-        conanfile.info.python_requires.package_revision_mode()
-
-
 def init_impl(
     derived_conanfile,
     base_conanfile,
@@ -34,10 +27,28 @@ def init_impl(
         derived_conanfile.tool_requires = base_conanfile.tool_requires + derived_conanfile.tool_requires
 
 
+def get_package_dir_cmake_options(deps_cpp_info, libs = ["ALL"]):
+    """
+    Returns a dictionary with "<package>_DIR" : path pairs for each dependency in the deps_cpp_info object that can be used to point
+    cmake to package config files.
+    """
+    cmake_options = {}
+
+    get_all =  libs[0] == "ALL"
+
+    deps = deps_cpp_info.deps
+    for dep in deps:
+        use_dep = get_all or dep in libs
+        if use_dep:
+            cmake_options[dep] = (dep.lib_paths[0] + '/cmake/MyLib').replace("\\","/")
+
+    return cmake_options
+
+
 class CPFBaseConanfile(object):
 
     # Binary configuration
-    settings = "os", "arch", "compiler", "build_type"
+    settings = "os", "os_build", "arch", "arch_build", "compiler", "build_type"
     options = {
         "shared": [True, False],
         "CPF_CONFIG": "ANY",
@@ -45,7 +56,8 @@ class CPFBaseConanfile(object):
         "build_target": "ANY",
         "install_target": "ANY",
         "CMAKE_GENERATOR": "ANY",
-        "CMAKE_MAKE_PROGRAM": "ANY"
+        "CMAKE_MAKE_PROGRAM": "ANY",
+        "ADDITIONAL_CMAKE_VARIABLES": {}
     }
 
     default_options = {
@@ -65,6 +77,12 @@ class CPFBaseConanfile(object):
     path_CPFCMake = 'Sources/CPFCMake'
     path_CPFBuildscripts = 'Sources/CPFBuildscripts'
     path_CIBuildConfigurations = 'Sources/CIBuildConfigurations'
+
+
+    def package_id(self):
+            # We expect no compatibility guarantees by default.
+            self.info.requires.package_revision_mode()
+            self.info.python_requires.recipe_revision_mode()
 
 
     def source(self):
@@ -106,13 +124,16 @@ class CPFBaseConanfile(object):
             ), cwd=cpf_root_dir)
         
         # Configure
+        # Create command with all options
         configure_command = "{0} 1_Configure.py {1} --inherits {2}".format(python, self.options.CPF_CONFIG, self.options.CPF_INHERITED_CONFIG) \
             + " -DCMAKE_INSTALL_PREFIX=\"{0}\"".format(install_prefix) \
             + " -DCPF_TEST_FILES_DIR=\"{0}\"".format(test_files_dir) \
             + " -DCMAKE_TOOLCHAIN_FILE=\"{0}\"".format(toolchain_file) \
             + " -DCMAKE_GENERATOR=\"{0}\"".format(self.options.CMAKE_GENERATOR) \
-            + " -DCMAKE_MAKE_PROGRAM=\"{0}\"".format(self.options.CMAKE_MAKE_PROGRAM) 
-            #+ " -D=\"{0}\"".format(toolchain_file) \
+            + " -DCMAKE_MAKE_PROGRAM=\"{0}\"".format(self.options.CMAKE_MAKE_PROGRAM)
+        # Add client defined options
+        for variable,value in self.options.ADDITIONAL_CMAKE_VARIABLES:
+            configure_command = configure_command + " -D{0}=\"{1}\"".format(variable, value)
 
         self.run(configure_command, cwd=cpf_root_dir)
 
