@@ -181,5 +181,7 @@ class CPFBaseConanfile(object):
 
 class CPFConanfile(ConanFile):
     name = "CPFConanfile"
-
-
+    description = 'Provides a basic conanfile for CPF based projects.'
+    url = 'https://github.com/Knitschi/CPFConanfile'
+    license = 'MIT'
+    
