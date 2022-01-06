@@ -28,7 +28,6 @@ def init_impl(
         derived_conanfile.tool_requires = base_conanfile.tool_requires + derived_conanfile.tool_requires
 
 
-
 class CPFBaseConanfile(object):
 
     # Binary configuration
@@ -61,11 +60,6 @@ class CPFBaseConanfile(object):
     path_CPFBuildscripts = 'Sources/CPFBuildscripts'
     path_CIBuildConfigurations = 'Sources/CIBuildConfigurations'
 
-    def package_id(self):
-        # We expect no compatibility guarantees by default.
-        self.info.requires.package_revision_mode()
-        self.info.tool_requires.package_revision_mode()
-        self.info.python_requires.package_revision_mode()
 
     def source(self):
         self.run("git clone --recursive {0} {1}".format(self.repository, self.source_folder))
