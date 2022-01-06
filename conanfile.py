@@ -8,6 +8,12 @@ from conans.tools import os_info, SystemPackageTool
 from conan.tools.cmake import CMakeToolchain
 from pathlib import PurePath, PurePosixPath
 
+def use_package_revision_mode_for_all_requirements(conanfile):
+        # We expect no compatibility guarantees by default.
+        conanfile.info.requires.package_revision_mode()
+        conanfile.info.tool_requires.package_revision_mode()
+        conanfile.info.python_requires.package_revision_mode()
+
 
 def init_impl(
     derived_conanfile,
