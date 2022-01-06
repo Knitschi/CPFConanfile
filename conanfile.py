@@ -1,9 +1,7 @@
 import platform
 import os
 from conans import ConanFile
-#from conan.tools.cmake import CMake
-#from conan.tools.cmake import CMakeToolchain
-#from conan.tools.layout import cmake_layout
+from conans import tools
 from conans.tools import os_info, SystemPackageTool
 from conan.tools.cmake import CMakeToolchain
 from pathlib import PurePath, PurePosixPath
@@ -24,7 +22,9 @@ def init_impl(
         derived_conanfile.settings = base_conanfile.settings + derived_conanfile.settings
         derived_conanfile.options = base_conanfile.options
         derived_conanfile.default_options = base_conanfile.default_options
-        derived_conanfile.tool_requires = base_conanfile.tool_requires + derived_conanfile.tool_requires
+        #derived_conanfile.requires = base_conanfile.requires + derived_conanfile.requires
+        derived_conanfile.build_requires = base_conanfile.build_requires + derived_conanfile.build_requires
+        #derived_conanfile.tool_requires = derived_conanfile.tool_requires
 
 
 def get_package_dir_cmake_options(deps_cpp_info, libs = ["ALL"]):
@@ -40,7 +40,9 @@ def get_package_dir_cmake_options(deps_cpp_info, libs = ["ALL"]):
     for dep in deps:
         use_dep = get_all or dep in libs
         if use_dep:
-            cmake_options[dep] = (dep.lib_paths[0] + '/cmake/MyLib').replace("\\","/")
+            lib_paths = deps_cpp_info[dep].lib_paths
+            if lib_paths:
+                cmake_options[dep] = (lib_paths[0] + '/cmake/MyLib').replace("\\","/")
 
     return cmake_options
 
@@ -48,35 +50,36 @@ def get_package_dir_cmake_options(deps_cpp_info, libs = ["ALL"]):
 class CPFBaseConanfile(object):
 
     # Binary configuration
-    settings = "os", "os_build", "arch", "arch_build", "compiler", "build_type"
+    settings = "os", "arch", "compiler", "build_type"
     options = {
         "shared": [True, False],
         "CPF_CONFIG": "ANY",
         "CPF_INHERITED_CONFIG": "ANY",
         "build_target": "ANY",
         "install_target": "ANY",
-        "CMAKE_GENERATOR": "ANY",
-        "CMAKE_MAKE_PROGRAM": "ANY",
-        "ADDITIONAL_CMAKE_VARIABLES": {}
+        "CMAKE_GENERATOR": "ANY"
     }
 
     default_options = {
         "shared": True,
+        "CPF_CONFIG": "FromConanfile",
         "CPF_INHERITED_CONFIG": "PlatformIndependent",
         "build_target": "pipeline",
         "install_target": "install_all",
-        "CMAKE_MAKE_PROGRAM": ""
+        "CMAKE_GENERATOR": "Ninja"  # Use ninja as default because be can get it on all platforms and it is performant.
     }
 
     # Dependencies
-    tool_requires = "cmake/3.20.4"
+    build_requires = "cmake/3.21.3", "ninja/1.10.2" # Docs say we should use tool_requires, but this did not work for me. They were not downloaded.
 
-    generators = "cmake"
+    generators = "cmake",
 
     repository = None
     path_CPFCMake = 'Sources/CPFCMake'
     path_CPFBuildscripts = 'Sources/CPFBuildscripts'
     path_CIBuildConfigurations = 'Sources/CIBuildConfigurations'
+
+    additional_cmake_variables = {}
 
 
     def package_id(self):
@@ -84,6 +87,12 @@ class CPFBaseConanfile(object):
             self.info.requires.package_revision_mode()
             self.info.python_requires.recipe_revision_mode()
 
+    # Could not make this work
+    #def build_requirements(self):
+        # For now we only get the ninja build-system as build-requirement and assume that
+        # make and MSBuild are preinstalled.
+        #if self.options.CMAKE_GENERATOR == "Ninja":
+        #    self.build_requires = ("a/b",) + ("ninja/1.10.2",)
 
     def source(self):
         self.run("git clone --recursive {0} {1}".format(self.repository, self.source_folder))
@@ -112,6 +121,10 @@ class CPFBaseConanfile(object):
 
         # Generate cmake toolchain file.
         tc = CMakeToolchain(self)
+        if self.options.CMAKE_GENERATOR == "Ninja":
+            # Removes the CMAKE_GENERATOR_PLATFORM and CMAKE_GENERATOR_TOOLSET definitions which cause a CMake error when used with ninja.
+            tc.blocks.remove("generic_system")
+
         tc.generate()
         toolchain_file = self.install_folder.replace("\\","/") + "/conan_toolchain.cmake"
 
@@ -122,17 +135,18 @@ class CPFBaseConanfile(object):
             self.path_CPFCMake,
             self.path_CIBuildConfigurations
             ), cwd=cpf_root_dir)
-        
+
         # Configure
+        if self.options.CMAKE_GENERATOR == "Ninja":
+                self.additional_cmake_variables["CMAKE_MAKE_PROGRAM"] = self.deps_cpp_info["ninja"].bin_paths[0].replace("\\","/") + "/ninja"
         # Create command with all options
         configure_command = "{0} 1_Configure.py {1} --inherits {2}".format(python, self.options.CPF_CONFIG, self.options.CPF_INHERITED_CONFIG) \
             + " -DCMAKE_INSTALL_PREFIX=\"{0}\"".format(install_prefix) \
             + " -DCPF_TEST_FILES_DIR=\"{0}\"".format(test_files_dir) \
             + " -DCMAKE_TOOLCHAIN_FILE=\"{0}\"".format(toolchain_file) \
-            + " -DCMAKE_GENERATOR=\"{0}\"".format(self.options.CMAKE_GENERATOR) \
-            + " -DCMAKE_MAKE_PROGRAM=\"{0}\"".format(self.options.CMAKE_MAKE_PROGRAM)
+            + " -DCMAKE_GENERATOR=\"{0}\"".format(self.options.CMAKE_GENERATOR)
         # Add client defined options
-        for variable,value in self.options.ADDITIONAL_CMAKE_VARIABLES:
+        for variable,value in self.additional_cmake_variables.items():
             configure_command = configure_command + " -D{0}=\"{1}\"".format(variable, value)
 
         self.run(configure_command, cwd=cpf_root_dir)
@@ -140,10 +154,17 @@ class CPFBaseConanfile(object):
 
     def build(self):
         python = self.python_command()
+
+        # For visual studio we use the vcvarsall.bat environment because I could not get ninja builds to work without it.
+        environment_command = ""
+        if self.settings.compiler == "Visual Studio":   # Use varsal environment when using visual studio compiler.
+            environment_command = tools.vcvars_command(self) + " && "
+
         # Generate
-        self.run("{0} 3_Generate.py {1} --clean".format(python, self.options.CPF_CONFIG))
+        self.run(environment_command + "{0} 3_Generate.py {1} --clean".format(python, self.options.CPF_CONFIG))
+
         # Build
-        self.run("{0} 4_Make.py {1} --target {2} --config {3}".format(
+        self.run(environment_command + "{0} 4_Make.py {1} --target {2} --config {3}".format(
             python,
             self.options.CPF_CONFIG,
             self.options.build_target,
@@ -195,10 +216,11 @@ class CPFBaseConanfile(object):
             return 'python3'
 
     def get_bin_dir(self):
-        if self.settings.os_build == 'Windows':
+        if self.settings.os == 'Windows':
             return ''
         else:
             return 'bin'
+
 
 class CPFConanfile(ConanFile):
     name = "CPFConanfile"
