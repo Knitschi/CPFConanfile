@@ -54,21 +54,51 @@ class CPFBaseConanfile(object):
     # Binary configuration
     settings = "os", "arch", "compiler", "build_type"
     options = {
+        "CPF_CONFIG" : "ANY",
         "shared": [True, False],
-        "CPF_CONFIG": "ANY",
-        "CPF_INHERITED_CONFIG": "ANY",
+        "profile_name": "ANY",
         "build_target": "ANY",
         "install_target": "ANY",
-        "CMAKE_GENERATOR": "ANY"
+        "CMAKE_GENERATOR": "ANY",
+        "CMAKE_MAKE_PROGRAM": "",
+        "CPF_ENABLE_ABI_API_COMPATIBILITY_REPORT_TARGETS": ["TRUE" , "FALSE"],
+        "CPF_ENABLE_ABI_API_STABILITY_CHECK_TARGETS": ["TRUE" , "FALSE"],
+        "CPF_ENABLE_ACYCLIC_TARGET": ["TRUE" , "FALSE"],
+        "CPF_ENABLE_CLANG_FORMAT_TARGETS": ["TRUE" , "FALSE"],
+        "CPF_ENABLE_CLANG_TIDY_TARGET": ["TRUE" , "FALSE"],
+        "CPF_ENABLE_OPENCPPCOVERAGE_TARGET": ["TRUE" , "FALSE"],
+        "CPF_ENABLE_PACKAGE_DOX_FILE_GENERATION": ["TRUE" , "FALSE"],
+        "CPF_ENABLE_TEST_EXE_TARGETS" : ["TRUE" , "FALSE"],
+        "CPF_ENABLE_RUN_TESTS_TARGET": ["TRUE" , "FALSE"],
+        "CPF_ENABLE_VALGRIND_TARGET": ["TRUE" , "FALSE"],
+        "CPF_WEBSERVER_BASE_DIR": "ANY",
+        "CPF_TEST_FILES_DIR": "ANY",
+        "CPF_VERBOSE": ["TRUE" , "FALSE"]
     }
 
+    # The default options should do a minimalistic build that only provides the binary files to clients while building as fast as possible.
+    # It does not run tests, build documentation or should do any other work.
+    # If that is required, clients have to switch it on explicitly.
     default_options = {
+        "CPF_CONFIG" : "Minimalistic",
         "shared": True,
-        "CPF_CONFIG": "FromConanfile",
-        "CPF_INHERITED_CONFIG": "PlatformIndependent",
         "build_target": "pipeline",
         "install_target": "install_all",
-        "CMAKE_GENERATOR": "Ninja"  # Use ninja as default because be can get it on all platforms and it is performant.
+        "CMAKE_GENERATOR": "Ninja",  # Use ninja as default because be can get it on all platforms and it is performant.
+        "CMAKE_MAKE_PROGRAM": "", 
+        "CPF_ENABLE_ABI_API_COMPATIBILITY_REPORT_TARGETS": "OFF",
+        "CPF_ENABLE_ABI_API_STABILITY_CHECK_TARGETS": "OFF",
+        "CPF_ENABLE_ACYCLIC_TARGET": "OFF",
+        "CPF_ENABLE_CLANG_FORMAT_TARGETS": "OFF",
+        "CPF_ENABLE_CLANG_TIDY_TARGET": "OFF",
+        "CPF_ENABLE_OPENCPPCOVERAGE_TARGET": "OFF",
+        "CPF_ENABLE_PACKAGE_DOX_FILE_GENERATION": "OFF",
+        "CPF_ENABLE_TEST_EXE_TARGETS" : "FALSE",
+        "CPF_ENABLE_RUN_TESTS_TARGET": "OFF",
+        "CPF_ENABLE_VALGRIND_TARGET": "OFF",
+        "CPF_WEBSERVER_BASE_DIR": "",
+        "CPF_TEST_FILES_DIR": "",
+        "CPF_VERBOSE": "OFF"
     }
 
     # Dependencies
@@ -82,7 +112,6 @@ class CPFBaseConanfile(object):
     path_CIBuildConfigurations = None
 
     additional_cmake_variables = {}
-
 
     def package_id(self):
             # We expect no compatibility guarantees by default.
@@ -139,18 +168,33 @@ class CPFBaseConanfile(object):
             ), cwd=cpf_root_dir)
 
         # Configure
-        if self.options.CMAKE_GENERATOR == "Ninja":
-                self.additional_cmake_variables["CMAKE_MAKE_PROGRAM"] = self.deps_cpp_info["ninja"].bin_paths[0].replace("\\","/") + "/ninja"
-        # Create command with all options
-        configure_command = "{0} 1_Configure.py {1} --inherits {2}".format(python, self.options.CPF_CONFIG, self.options.CPF_INHERITED_CONFIG) \
-            + " -DCMAKE_INSTALL_PREFIX=\"{0}\"".format(install_prefix) \
-            + " -DCPF_TEST_FILES_DIR=\"{0}\"".format(test_files_dir) \
-            + " -DCMAKE_TOOLCHAIN_FILE=\"{0}\"".format(toolchain_file) \
-            + " -DCMAKE_GENERATOR=\"{0}\"".format(self.options.CMAKE_GENERATOR)
+        configure_command = "{0} 1_Configure.py {1} --inherits {2}".format(python, self.options.CPF_CONFIG, "PlatformIndependent")
+        # Translate package options to cmake -D options.
+        self.additional_cmake_variables["CMAKE_INSTALL_PREFIX"] = install_prefix
+        self.additional_cmake_variables["CMAKE_TOOLCHAIN_FILE"] = toolchain_file
+        self.additional_cmake_variables["CMAKE_BUILD_TYPE"] = self.settings.build_type
+        self.additional_cmake_variables["CMAKE_CONFIGURATION_TYPES"] = self.settings.build_type
+        self.additional_cmake_variables["CMAKE_GENERATOR"] = self.options.CMAKE_GENERATOR
+        self.additional_cmake_variables["CMAKE_MAKE_PROGRAM"] = self.options.CMAKE_MAKE_PROGRAM
+        self.additional_cmake_variables["CPF_ENABLE_ABI_API_COMPATIBILITY_REPORT_TARGETS"] = self.options.CPF_ENABLE_ABI_API_COMPATIBILITY_REPORT_TARGETS
+        self.additional_cmake_variables["CPF_ENABLE_ABI_API_STABILITY_CHECK_TARGETS"] = self.options.CPF_ENABLE_ABI_API_STABILITY_CHECK_TARGETS
+        self.additional_cmake_variables["CPF_ENABLE_ACYCLIC_TARGET"] = self.options.CPF_ENABLE_ACYCLIC_TARGET
+        self.additional_cmake_variables["CPF_ENABLE_CLANG_FORMAT_TARGETS"] = self.options.CPF_ENABLE_CLANG_FORMAT_TARGETS
+        self.additional_cmake_variables["CPF_ENABLE_CLANG_TIDY_TARGET"] = self.options.CPF_ENABLE_CLANG_TIDY_TARGET
+        self.additional_cmake_variables["CPF_ENABLE_OPENCPPCOVERAGE_TARGET"] = self.options.CPF_ENABLE_OPENCPPCOVERAGE_TARGET
+        self.additional_cmake_variables["CPF_ENABLE_PACKAGE_DOX_FILE_GENERATION"] = self.options.CPF_ENABLE_PACKAGE_DOX_FILE_GENERATION
+        self.additional_cmake_variables["CPF_ENABLE_PRECOMPILED_HEADER"] = self.options.CPF_ENABLE_PRECOMPILED_HEADER
+        self.additional_cmake_variables["CPF_ENABLE_TEST_EXE_TARGETS"] = self.options.CPF_ENABLE_TEST_EXE_TARGETS
+        self.additional_cmake_variables["CPF_ENABLE_RUN_TESTS_TARGET"] = self.options.CPF_ENABLE_RUN_TESTS_TARGET
+        self.additional_cmake_variables["CPF_ENABLE_VALGRIND_TARGE"] = self.options.CPF_ENABLE_VALGRIND_TARGE
+        self.additional_cmake_variables["CPF_ENABLE_VERSION_RC_FILE_GENERATION"] = self.options.CPF_ENABLE_VERSION_RC_FILE_GENERATION
+        self.additional_cmake_variables["CPF_HAS_GOOGLE_TEST_EXE"] = self.options.CPF_HAS_GOOGLE_TEST_EXE
+        self.additional_cmake_variables["CPF_WEBSERVER_BASE_DIR"] = self.options.CPF_WEBSERVER_BASE_DIR
+        self.additional_cmake_variables["CPF_TEST_FILES_DIR"] = self.options.CPF_TEST_FILES_DIR
+        self.additional_cmake_variables["CPF_VERBOSE"] = self.options.CPF_VERBOSE
         # Add client defined options
         for variable,value in self.additional_cmake_variables.items():
             configure_command = configure_command + " -D{0}=\"{1}\"".format(variable, value)
-
         self.run(configure_command, cwd=cpf_root_dir)
 
 
