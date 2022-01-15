@@ -12,12 +12,14 @@ def init_impl(
     repository,
     path_CPFCMake='Sources/CPFCMake',
     path_CPFBuildscripts='Sources/CPFBuildscripts',
-    path_CIBuildConfigurations = 'Sources/CIBuildConfigurations'):
+    path_CIBuildConfigurations='Sources/CIBuildConfigurations'):
+
+        print('-------------- ' + path_CPFBuildscripts)
 
         base_conanfile.repository = repository
-        base_conanfile.path_CPFCMake = path_CPFCMake
-        base_conanfile.path_CPFBuildscripts = path_CPFBuildscripts
-        base_conanfile.path_CIBuildConfigurations = path_CIBuildConfigurations
+        derived_conanfile.path_CPFCMake = path_CPFCMake
+        derived_conanfile.path_CPFBuildscripts = path_CPFBuildscripts
+        derived_conanfile.path_CIBuildConfigurations = path_CIBuildConfigurations
 
         derived_conanfile.settings = base_conanfile.settings + derived_conanfile.settings
         derived_conanfile.options = base_conanfile.options
@@ -75,9 +77,9 @@ class CPFBaseConanfile(object):
     generators = "cmake",
 
     repository = None
-    path_CPFCMake = 'Sources/CPFCMake'
-    path_CPFBuildscripts = 'Sources/CPFBuildscripts'
-    path_CIBuildConfigurations = 'Sources/CIBuildConfigurations'
+    path_CPFCMake = None
+    path_CPFBuildscripts = None
+    path_CIBuildConfigurations = None
 
     additional_cmake_variables = {}
 
