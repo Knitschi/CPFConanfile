@@ -12,11 +12,12 @@ def init_impl(
     repository,
     path_CPFCMake='Sources/CPFCMake',
     path_CPFBuildscripts='Sources/CPFBuildscripts',
-    path_CIBuildConfigurations='Sources/CIBuildConfigurations'):
-
-        print('-------------- ' + path_CPFBuildscripts)
+    path_CIBuildConfigurations='Sources/CIBuildConfigurations',
+    additional_cmake_options={}
+    ):
 
         base_conanfile.repository = repository
+        base_conanfile.additional_cmake_variables = additional_cmake_options
         derived_conanfile.path_CPFCMake = path_CPFCMake
         derived_conanfile.path_CPFBuildscripts = path_CPFBuildscripts
         derived_conanfile.path_CIBuildConfigurations = path_CIBuildConfigurations
@@ -56,11 +57,10 @@ class CPFBaseConanfile(object):
     options = {
         "CPF_CONFIG" : "ANY",
         "shared": [True, False],
-        "profile_name": "ANY",
         "build_target": "ANY",
         "install_target": "ANY",
         "CMAKE_GENERATOR": "ANY",
-        "CMAKE_MAKE_PROGRAM": "",
+        "CMAKE_MAKE_PROGRAM": "ANY",
         "CPF_ENABLE_ABI_API_COMPATIBILITY_REPORT_TARGETS": ["TRUE" , "FALSE"],
         "CPF_ENABLE_ABI_API_STABILITY_CHECK_TARGETS": ["TRUE" , "FALSE"],
         "CPF_ENABLE_ACYCLIC_TARGET": ["TRUE" , "FALSE"],
@@ -86,19 +86,19 @@ class CPFBaseConanfile(object):
         "install_target": "install_all",
         "CMAKE_GENERATOR": "Ninja",  # Use ninja as default because be can get it on all platforms and it is performant.
         "CMAKE_MAKE_PROGRAM": "", 
-        "CPF_ENABLE_ABI_API_COMPATIBILITY_REPORT_TARGETS": "OFF",
-        "CPF_ENABLE_ABI_API_STABILITY_CHECK_TARGETS": "OFF",
-        "CPF_ENABLE_ACYCLIC_TARGET": "OFF",
-        "CPF_ENABLE_CLANG_FORMAT_TARGETS": "OFF",
-        "CPF_ENABLE_CLANG_TIDY_TARGET": "OFF",
-        "CPF_ENABLE_OPENCPPCOVERAGE_TARGET": "OFF",
-        "CPF_ENABLE_PACKAGE_DOX_FILE_GENERATION": "OFF",
+        "CPF_ENABLE_ABI_API_COMPATIBILITY_REPORT_TARGETS": "FALSE",
+        "CPF_ENABLE_ABI_API_STABILITY_CHECK_TARGETS": "FALSE",
+        "CPF_ENABLE_ACYCLIC_TARGET": "FALSE",
+        "CPF_ENABLE_CLANG_FORMAT_TARGETS": "FALSE",
+        "CPF_ENABLE_CLANG_TIDY_TARGET": "FALSE",
+        "CPF_ENABLE_OPENCPPCOVERAGE_TARGET": "FALSE",
+        "CPF_ENABLE_PACKAGE_DOX_FILE_GENERATION": "FALSE",
         "CPF_ENABLE_TEST_EXE_TARGETS" : "FALSE",
-        "CPF_ENABLE_RUN_TESTS_TARGET": "OFF",
-        "CPF_ENABLE_VALGRIND_TARGET": "OFF",
+        "CPF_ENABLE_RUN_TESTS_TARGET": "FALSE",
+        "CPF_ENABLE_VALGRIND_TARGET": "FALSE",
         "CPF_WEBSERVER_BASE_DIR": "",
         "CPF_TEST_FILES_DIR": "",
-        "CPF_VERBOSE": "OFF"
+        "CPF_VERBOSE": "FALSE"
     }
 
     # Dependencies
@@ -175,7 +175,8 @@ class CPFBaseConanfile(object):
         self.additional_cmake_variables["CMAKE_BUILD_TYPE"] = self.settings.build_type
         self.additional_cmake_variables["CMAKE_CONFIGURATION_TYPES"] = self.settings.build_type
         self.additional_cmake_variables["CMAKE_GENERATOR"] = self.options.CMAKE_GENERATOR
-        self.additional_cmake_variables["CMAKE_MAKE_PROGRAM"] = self.options.CMAKE_MAKE_PROGRAM
+        if self.options.CMAKE_MAKE_PROGRAM != "":   # Setting an empty value here causes cmake errors.
+            self.additional_cmake_variables["CMAKE_MAKE_PROGRAM"] = self.options.CMAKE_MAKE_PROGRAM
         self.additional_cmake_variables["CPF_ENABLE_ABI_API_COMPATIBILITY_REPORT_TARGETS"] = self.options.CPF_ENABLE_ABI_API_COMPATIBILITY_REPORT_TARGETS
         self.additional_cmake_variables["CPF_ENABLE_ABI_API_STABILITY_CHECK_TARGETS"] = self.options.CPF_ENABLE_ABI_API_STABILITY_CHECK_TARGETS
         self.additional_cmake_variables["CPF_ENABLE_ACYCLIC_TARGET"] = self.options.CPF_ENABLE_ACYCLIC_TARGET
@@ -183,12 +184,9 @@ class CPFBaseConanfile(object):
         self.additional_cmake_variables["CPF_ENABLE_CLANG_TIDY_TARGET"] = self.options.CPF_ENABLE_CLANG_TIDY_TARGET
         self.additional_cmake_variables["CPF_ENABLE_OPENCPPCOVERAGE_TARGET"] = self.options.CPF_ENABLE_OPENCPPCOVERAGE_TARGET
         self.additional_cmake_variables["CPF_ENABLE_PACKAGE_DOX_FILE_GENERATION"] = self.options.CPF_ENABLE_PACKAGE_DOX_FILE_GENERATION
-        self.additional_cmake_variables["CPF_ENABLE_PRECOMPILED_HEADER"] = self.options.CPF_ENABLE_PRECOMPILED_HEADER
         self.additional_cmake_variables["CPF_ENABLE_TEST_EXE_TARGETS"] = self.options.CPF_ENABLE_TEST_EXE_TARGETS
         self.additional_cmake_variables["CPF_ENABLE_RUN_TESTS_TARGET"] = self.options.CPF_ENABLE_RUN_TESTS_TARGET
-        self.additional_cmake_variables["CPF_ENABLE_VALGRIND_TARGE"] = self.options.CPF_ENABLE_VALGRIND_TARGE
-        self.additional_cmake_variables["CPF_ENABLE_VERSION_RC_FILE_GENERATION"] = self.options.CPF_ENABLE_VERSION_RC_FILE_GENERATION
-        self.additional_cmake_variables["CPF_HAS_GOOGLE_TEST_EXE"] = self.options.CPF_HAS_GOOGLE_TEST_EXE
+        self.additional_cmake_variables["CPF_ENABLE_VALGRIND_TARGET"] = self.options.CPF_ENABLE_VALGRIND_TARGET
         self.additional_cmake_variables["CPF_WEBSERVER_BASE_DIR"] = self.options.CPF_WEBSERVER_BASE_DIR
         self.additional_cmake_variables["CPF_TEST_FILES_DIR"] = self.options.CPF_TEST_FILES_DIR
         self.additional_cmake_variables["CPF_VERBOSE"] = self.options.CPF_VERBOSE
