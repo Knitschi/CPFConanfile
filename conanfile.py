@@ -73,6 +73,8 @@ class CPFBaseConanfile(object):
         "CPF_ENABLE_TEST_EXE_TARGETS" : ["TRUE" , "FALSE"],
         "CPF_ENABLE_RUN_TESTS_TARGET": ["TRUE" , "FALSE"],
         "CPF_ENABLE_VALGRIND_TARGET": ["TRUE" , "FALSE"],
+        "CPF_CLANG_TIDY_EXE": "ANY",
+        "CPF_CLANG_FORMAT_EXE": "ANY",
         "CPF_WEBSERVER_BASE_DIR": "ANY",
         "CPF_TEST_FILES_DIR": "ANY",
         "CPF_VERBOSE": ["TRUE" , "FALSE"]
@@ -100,6 +102,8 @@ class CPFBaseConanfile(object):
         "CPF_ENABLE_TEST_EXE_TARGETS" : "FALSE",
         "CPF_ENABLE_RUN_TESTS_TARGET": "FALSE",
         "CPF_ENABLE_VALGRIND_TARGET": "FALSE",
+        "CPF_CLANG_TIDY_EXE": "",
+        "CPF_CLANG_FORMAT_EXE": "",
         "CPF_WEBSERVER_BASE_DIR": "",
         "CPF_TEST_FILES_DIR": "",
         "CPF_VERBOSE": "FALSE"
@@ -195,6 +199,10 @@ class CPFBaseConanfile(object):
         self.additional_cmake_variables["CPF_ENABLE_TEST_EXE_TARGETS"] = self.options.CPF_ENABLE_TEST_EXE_TARGETS
         self.additional_cmake_variables["CPF_ENABLE_RUN_TESTS_TARGET"] = self.options.CPF_ENABLE_RUN_TESTS_TARGET
         self.additional_cmake_variables["CPF_ENABLE_VALGRIND_TARGET"] = self.options.CPF_ENABLE_VALGRIND_TARGET
+        if self.options.CPF_CLANG_TIDY_EXE != "": 
+            self.additional_cmake_variables["CPF_CLANG_TIDY_EXE"] = self.options.CPF_CLANG_TIDY_EXE
+        if self.options.CPF_CLANG_FORMAT_EXE != "": 
+            self.additional_cmake_variables["CPF_CLANG_FORMAT_EXE"] = self.options.CPF_CLANG_FORMAT_EXE
         self.additional_cmake_variables["CPF_WEBSERVER_BASE_DIR"] = self.options.CPF_WEBSERVER_BASE_DIR
         self.additional_cmake_variables["CPF_TEST_FILES_DIR"] = self.options.CPF_TEST_FILES_DIR
         self.additional_cmake_variables["CPF_VERBOSE"] = self.options.CPF_VERBOSE
