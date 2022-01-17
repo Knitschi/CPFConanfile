@@ -59,6 +59,8 @@ class CPFBaseConanfile(object):
         "shared": [True, False],
         "build_target": "ANY",
         "install_target": "ANY",
+        "CMAKE_C_COMPILER" : "ANY",
+        "CMAKE_CXX_COMPILER" : "ANY",
         "CMAKE_GENERATOR": "ANY",
         "CMAKE_MAKE_PROGRAM": "ANY",
         "CPF_ENABLE_ABI_API_COMPATIBILITY_REPORT_TARGETS": ["TRUE" , "FALSE"],
@@ -84,6 +86,8 @@ class CPFBaseConanfile(object):
         "shared": True,
         "build_target": "pipeline",
         "install_target": "install_all",
+        "CMAKE_C_COMPILER" : "",
+        "CMAKE_CXX_COMPILER" : "",
         "CMAKE_GENERATOR": "Ninja",  # Use ninja as default because be can get it on all platforms and it is performant.
         "CMAKE_MAKE_PROGRAM": "", 
         "CPF_ENABLE_ABI_API_COMPATIBILITY_REPORT_TARGETS": "FALSE",
@@ -174,6 +178,10 @@ class CPFBaseConanfile(object):
         self.additional_cmake_variables["CMAKE_TOOLCHAIN_FILE"] = toolchain_file
         self.additional_cmake_variables["CMAKE_BUILD_TYPE"] = self.settings.build_type
         self.additional_cmake_variables["CMAKE_CONFIGURATION_TYPES"] = self.settings.build_type
+        if self.options.CMAKE_C_COMPILER != "": 
+            self.additional_cmake_variables["CMAKE_C_COMPILER"] = self.options.CMAKE_C_COMPILER
+        if self.options.CMAKE_CXX_COMPILER != "": 
+            self.additional_cmake_variables["CMAKE_CXX_COMPILER"] = self.options.CMAKE_CXX_COMPILER
         self.additional_cmake_variables["CMAKE_GENERATOR"] = self.options.CMAKE_GENERATOR
         if self.options.CMAKE_MAKE_PROGRAM != "":   # Setting an empty value here causes cmake errors.
             self.additional_cmake_variables["CMAKE_MAKE_PROGRAM"] = self.options.CMAKE_MAKE_PROGRAM
@@ -197,23 +205,24 @@ class CPFBaseConanfile(object):
 
 
     def build(self):
-        python = self.python_command()
-
-        # For visual studio we use the vcvarsall.bat environment because I could not get ninja builds to work without it.
-        environment_command = ""
-        if self.settings.compiler == "Visual Studio":   # Use varsal environment when using visual studio compiler.
-            environment_command = tools.vcvars_command(self) + " && "
 
         # Generate
-        self.run(environment_command + "{0} 3_Generate.py {1} --clean".format(python, self.options.CPF_CONFIG))
+        self.run(self._vcvars_command() + "{0} 3_Generate.py {1} --clean".format(self.python_command(), self.options.CPF_CONFIG))
 
         # Build
-        self.run(environment_command + "{0} 4_Make.py {1} --target {2} --config {3}".format(
-            python,
+        self.run(self._vcvars_command() + "{0} 4_Make.py {1} --target {2} --config {3}".format(
+            self.python_command(),
             self.options.CPF_CONFIG,
             self.options.build_target,
             self.settings.build_type
             ))
+
+    def _vcvars_command(self):
+        # For visual studio we use the vcvarsall.bat environment because I could not get ninja builds to work without it.
+        environment_command = ""
+        if self.settings.compiler == "Visual Studio":   # Use varsal environment when using visual studio compiler.
+            environment_command = tools.vcvars_command(self) + " && "
+        return environment_command
  
 
     def package(self):
