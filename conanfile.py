@@ -63,6 +63,7 @@ class CPFBaseConanfile(object):
         "CMAKE_CXX_COMPILER" : "ANY",
         "CMAKE_GENERATOR": "ANY",
         "CMAKE_MAKE_PROGRAM": "ANY",
+        "CMAKE_EXPORT_COMPILE_COMMANDS": "ANY",
         "CPF_ENABLE_ABI_API_COMPATIBILITY_REPORT_TARGETS": ["TRUE" , "FALSE"],
         "CPF_ENABLE_ABI_API_STABILITY_CHECK_TARGETS": ["TRUE" , "FALSE"],
         "CPF_ENABLE_ACYCLIC_TARGET": ["TRUE" , "FALSE"],
@@ -92,6 +93,7 @@ class CPFBaseConanfile(object):
         "CMAKE_CXX_COMPILER" : "",
         "CMAKE_GENERATOR": "Ninja",  # Use ninja as default because be can get it on all platforms and it is performant.
         "CMAKE_MAKE_PROGRAM": "", 
+        "CMAKE_EXPORT_COMPILE_COMMANDS": "FALSE",
         "CPF_ENABLE_ABI_API_COMPATIBILITY_REPORT_TARGETS": "FALSE",
         "CPF_ENABLE_ABI_API_STABILITY_CHECK_TARGETS": "FALSE",
         "CPF_ENABLE_ACYCLIC_TARGET": "FALSE",
@@ -159,11 +161,18 @@ class CPFBaseConanfile(object):
         test_files_dir = cpf_root_dir + "/Tests/" + str(self.options.CPF_CONFIG)
 
         # Generate cmake toolchain file.
+        # This sets
+        # BUILD_SHARED_LIBS
+        # CMAKE_GENERATOR_PLATFORM
+        # CMAKE_GENERATOR_TOOLSET
+        # CMAKE_CXX_FLAGS_INIT
+        # CMAKE_C_FLAGS_INIT
+        # CMAKE_EXE_LINKER_FLAGS_INIT
+        # CMAKE_MSVC_RUNTIME_LIBRARY
         tc = CMakeToolchain(self)
         if self.options.CMAKE_GENERATOR == "Ninja":
             # Removes the CMAKE_GENERATOR_PLATFORM and CMAKE_GENERATOR_TOOLSET definitions which cause a CMake error when used with ninja.
             tc.blocks.remove("generic_system")
-
         tc.generate()
         toolchain_file = self.install_folder.replace("\\","/") + "/conan_toolchain.cmake"
 
