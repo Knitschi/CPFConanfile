@@ -198,6 +198,7 @@ class CPFBaseConanfile(object):
         self.additional_cmake_variables["CMAKE_GENERATOR"] = self.options.CMAKE_GENERATOR
         if self.options.CMAKE_MAKE_PROGRAM != "":   # Setting an empty value here causes cmake errors.
             self.additional_cmake_variables["CMAKE_MAKE_PROGRAM"] = self.options.CMAKE_MAKE_PROGRAM
+        self.additional_cmake_variables["CMAKE_EXPORT_COMPILE_COMMANDS"] = self.options.CMAKE_EXPORT_COMPILE_COMMANDS
         self.additional_cmake_variables["CPF_ENABLE_ABI_API_COMPATIBILITY_REPORT_TARGETS"] = self.options.CPF_ENABLE_ABI_API_COMPATIBILITY_REPORT_TARGETS
         self.additional_cmake_variables["CPF_ENABLE_ABI_API_STABILITY_CHECK_TARGETS"] = self.options.CPF_ENABLE_ABI_API_STABILITY_CHECK_TARGETS
         self.additional_cmake_variables["CPF_ENABLE_ACYCLIC_TARGET"] = self.options.CPF_ENABLE_ACYCLIC_TARGET
