@@ -156,7 +156,7 @@ class CPFBaseConanfile(object):
             cpf_root_dir = self.source_folder.replace("\\","/")
 
         print("-------------------------- cwd " + cpf_root_dir)
-        print("--------------------------- build " + self.build_dir)
+        print("--------------------------- build " + self.build_folder)
         print("--------------------------- source " + self.source_folder)
         print("--------------------------- install " + self.install_folder)
 
