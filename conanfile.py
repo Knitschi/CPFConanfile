@@ -156,9 +156,11 @@ class CPFBaseConanfile(object):
             cpf_root_dir = self.source_folder.replace("\\","/")
 
         print("-------------------------- cwd " + cpf_root_dir)
-        print("--------------------------- build " + self.build_folder)
-        print("--------------------------- source " + self.source_folder)
-        print("--------------------------- install " + self.install_folder)
+        print("--------------------------- build " + str(self.build_folder))
+        print("--------------------------- source " + str(self.source_folder))
+        print("--------------------------- install " + str(self.install_folder))
+        print("--------------------------- package " + str(self.package_folder))
+        print("--------------------------- recipe " + str(self.recipe_folder))
 
         # Sadly the package folder is not available at this point, so we use an intermediate install prefix and copy the files
         # to the package folder in an extra step.
