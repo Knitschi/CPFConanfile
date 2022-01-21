@@ -151,7 +151,7 @@ class CPFBaseConanfile(object):
         python = self.python_command()
 
         # The cwd is the conan install directory in this method.
-        cpf_root_dir = self.install_folder.replace("\\","/") # + "/../.." # This is used when running conan install.
+        cpf_root_dir = self.recipe_folder.replace("\\","/") # + "/../.." # This is used when running conan install.
         #if self.source_folder:  # This is used when running conan create.
         #    cpf_root_dir = self.source_folder.replace("\\","/")
 
@@ -184,7 +184,7 @@ class CPFBaseConanfile(object):
         toolchain_file = self.install_folder.replace("\\","/") + "/conan_toolchain.cmake"
 
         # Install Buildscripts
-        self.run("\"{0}\" \"{1}/0_CopyScripts.py\" --CPFCMake_DIR {2} --CIBuildConfigurations_DIR {3}".format(
+        self.run("{0} {1}/0_CopyScripts.py --CPFCMake_DIR {2} --CIBuildConfigurations_DIR {3}".format(
             python,
             self.path_CPFBuildscripts,
             self.path_CPFCMake,
