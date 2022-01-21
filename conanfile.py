@@ -151,11 +151,11 @@ class CPFBaseConanfile(object):
         python = self.python_command()
 
         # The cwd is the conan install directory in this method.
-        cpf_root_dir = os.getcwd().replace("\\","/") # + "/../.." # This is used when running conan install.
-        if self.source_folder:  # This is used when running conan create.
-            cpf_root_dir = self.source_folder.replace("\\","/")
+        cpf_root_dir = self.install_folder.replace("\\","/") # + "/../.." # This is used when running conan install.
+        #if self.source_folder:  # This is used when running conan create.
+        #    cpf_root_dir = self.source_folder.replace("\\","/")
 
-        print("-------------------------- cwd " + cpf_root_dir)
+        print("-------------------------- root-dir " + cpf_root_dir)
         print("--------------------------- build " + str(self.build_folder))
         print("--------------------------- source " + str(self.source_folder))
         print("--------------------------- install " + str(self.install_folder))
