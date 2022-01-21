@@ -151,9 +151,14 @@ class CPFBaseConanfile(object):
         python = self.python_command()
 
         # The cwd is the conan install directory in this method.
-        cpf_root_dir = os.getcwd().replace("\\","/") + "/../.." # This is used when running conan install.
+        cpf_root_dir = os.getcwd().replace("\\","/") # + "/../.." # This is used when running conan install.
         if self.source_folder:  # This is used when running conan create.
             cpf_root_dir = self.source_folder.replace("\\","/")
+
+        print("-------------------------- cwd " + cpf_root_dir)
+        print("--------------------------- build " + self.build_dir)
+        print("--------------------------- source " + self.source_folder)
+        print("--------------------------- install " + self.install_folder)
 
         # Sadly the package folder is not available at this point, so we use an intermediate install prefix and copy the files
         # to the package folder in an extra step.
@@ -182,7 +187,7 @@ class CPFBaseConanfile(object):
             self.path_CPFBuildscripts,
             self.path_CPFCMake,
             self.path_CIBuildConfigurations
-            ), cwd= "\"" + cpf_root_dir + "\"")
+            ), cwd=cpf_root_dir )
 
         # Configure
         configure_command = "{0} 1_Configure.py {1} --inherits {2}".format(python, self.options.CPF_CONFIG, "PlatformIndependent")
