@@ -63,6 +63,7 @@ class CPFBaseConanfile(object):
         "CMAKE_CXX_COMPILER" : "ANY",
         "CMAKE_GENERATOR": "ANY",
         "CMAKE_MAKE_PROGRAM": "ANY",
+        "CMAKE_EXPORT_COMPILE_COMMANDS": "ANY",
         "CPF_ENABLE_ABI_API_COMPATIBILITY_REPORT_TARGETS": ["TRUE" , "FALSE"],
         "CPF_ENABLE_ABI_API_STABILITY_CHECK_TARGETS": ["TRUE" , "FALSE"],
         "CPF_ENABLE_ACYCLIC_TARGET": ["TRUE" , "FALSE"],
@@ -73,6 +74,8 @@ class CPFBaseConanfile(object):
         "CPF_ENABLE_TEST_EXE_TARGETS" : ["TRUE" , "FALSE"],
         "CPF_ENABLE_RUN_TESTS_TARGET": ["TRUE" , "FALSE"],
         "CPF_ENABLE_VALGRIND_TARGET": ["TRUE" , "FALSE"],
+        "CPF_CLANG_TIDY_EXE": "ANY",
+        "CPF_CLANG_FORMAT_EXE": "ANY",
         "CPF_WEBSERVER_BASE_DIR": "ANY",
         "CPF_TEST_FILES_DIR": "ANY",
         "CPF_VERBOSE": ["TRUE" , "FALSE"]
@@ -90,6 +93,7 @@ class CPFBaseConanfile(object):
         "CMAKE_CXX_COMPILER" : "",
         "CMAKE_GENERATOR": "Ninja",  # Use ninja as default because be can get it on all platforms and it is performant.
         "CMAKE_MAKE_PROGRAM": "", 
+        "CMAKE_EXPORT_COMPILE_COMMANDS": "FALSE",
         "CPF_ENABLE_ABI_API_COMPATIBILITY_REPORT_TARGETS": "FALSE",
         "CPF_ENABLE_ABI_API_STABILITY_CHECK_TARGETS": "FALSE",
         "CPF_ENABLE_ACYCLIC_TARGET": "FALSE",
@@ -100,6 +104,8 @@ class CPFBaseConanfile(object):
         "CPF_ENABLE_TEST_EXE_TARGETS" : "FALSE",
         "CPF_ENABLE_RUN_TESTS_TARGET": "FALSE",
         "CPF_ENABLE_VALGRIND_TARGET": "FALSE",
+        "CPF_CLANG_TIDY_EXE": "",
+        "CPF_CLANG_FORMAT_EXE": "",
         "CPF_WEBSERVER_BASE_DIR": "",
         "CPF_TEST_FILES_DIR": "",
         "CPF_VERBOSE": "FALSE"
@@ -155,11 +161,18 @@ class CPFBaseConanfile(object):
         test_files_dir = cpf_root_dir + "/Tests/" + str(self.options.CPF_CONFIG)
 
         # Generate cmake toolchain file.
+        # This sets
+        # BUILD_SHARED_LIBS
+        # CMAKE_GENERATOR_PLATFORM
+        # CMAKE_GENERATOR_TOOLSET
+        # CMAKE_CXX_FLAGS_INIT
+        # CMAKE_C_FLAGS_INIT
+        # CMAKE_EXE_LINKER_FLAGS_INIT
+        # CMAKE_MSVC_RUNTIME_LIBRARY
         tc = CMakeToolchain(self)
         if self.options.CMAKE_GENERATOR == "Ninja":
             # Removes the CMAKE_GENERATOR_PLATFORM and CMAKE_GENERATOR_TOOLSET definitions which cause a CMake error when used with ninja.
             tc.blocks.remove("generic_system")
-
         tc.generate()
         toolchain_file = self.install_folder.replace("\\","/") + "/conan_toolchain.cmake"
 
@@ -185,6 +198,7 @@ class CPFBaseConanfile(object):
         self.additional_cmake_variables["CMAKE_GENERATOR"] = self.options.CMAKE_GENERATOR
         if self.options.CMAKE_MAKE_PROGRAM != "":   # Setting an empty value here causes cmake errors.
             self.additional_cmake_variables["CMAKE_MAKE_PROGRAM"] = self.options.CMAKE_MAKE_PROGRAM
+        self.additional_cmake_variables["CMAKE_EXPORT_COMPILE_COMMANDS"] = self.options.CMAKE_EXPORT_COMPILE_COMMANDS
         self.additional_cmake_variables["CPF_ENABLE_ABI_API_COMPATIBILITY_REPORT_TARGETS"] = self.options.CPF_ENABLE_ABI_API_COMPATIBILITY_REPORT_TARGETS
         self.additional_cmake_variables["CPF_ENABLE_ABI_API_STABILITY_CHECK_TARGETS"] = self.options.CPF_ENABLE_ABI_API_STABILITY_CHECK_TARGETS
         self.additional_cmake_variables["CPF_ENABLE_ACYCLIC_TARGET"] = self.options.CPF_ENABLE_ACYCLIC_TARGET
@@ -195,6 +209,10 @@ class CPFBaseConanfile(object):
         self.additional_cmake_variables["CPF_ENABLE_TEST_EXE_TARGETS"] = self.options.CPF_ENABLE_TEST_EXE_TARGETS
         self.additional_cmake_variables["CPF_ENABLE_RUN_TESTS_TARGET"] = self.options.CPF_ENABLE_RUN_TESTS_TARGET
         self.additional_cmake_variables["CPF_ENABLE_VALGRIND_TARGET"] = self.options.CPF_ENABLE_VALGRIND_TARGET
+        if self.options.CPF_CLANG_TIDY_EXE != "": 
+            self.additional_cmake_variables["CPF_CLANG_TIDY_EXE"] = self.options.CPF_CLANG_TIDY_EXE
+        if self.options.CPF_CLANG_FORMAT_EXE != "": 
+            self.additional_cmake_variables["CPF_CLANG_FORMAT_EXE"] = self.options.CPF_CLANG_FORMAT_EXE
         self.additional_cmake_variables["CPF_WEBSERVER_BASE_DIR"] = self.options.CPF_WEBSERVER_BASE_DIR
         self.additional_cmake_variables["CPF_TEST_FILES_DIR"] = self.options.CPF_TEST_FILES_DIR
         self.additional_cmake_variables["CPF_VERBOSE"] = self.options.CPF_VERBOSE
