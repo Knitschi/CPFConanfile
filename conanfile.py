@@ -184,8 +184,9 @@ class CPFBaseConanfile(object):
         toolchain_file = self.install_folder.replace("\\","/") + "/conan_toolchain.cmake"
 
         # Install Buildscripts
-        self.run("{0} {1}/0_CopyScripts.py --CPFCMake_DIR {2} --CIBuildConfigurations_DIR {3}".format(
+        self.run("{0} \"{1}/{2}/0_CopyScripts.py\" --CPFCMake_DIR \"{1}/{3}\" --CIBuildConfigurations_DIR \"{1}/{4}\"".format(
             python,
+            cpf_root_dir,
             self.path_CPFBuildscripts,
             self.path_CPFCMake,
             self.path_CIBuildConfigurations
