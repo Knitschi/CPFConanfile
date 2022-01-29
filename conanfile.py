@@ -138,6 +138,12 @@ class CPFBaseConanfile(object):
     def source(self):
         self.run("git clone --recursive {0} {1}".format(self.repository, self.source_folder))
         self.run("cd {0} && git checkout {1}".format(self.source_folder, self.version))
+        self.run("git submodule update --init --recursive".format(self.source_folder, self.version))
+        self.run("git diff-index HEAD")
+        self.run("git diff-index {0}".format(self.version))
+        print("---------------------------")
+        self.run("git diff HEAD".format(self.version))
+        print("---------------------------")
 
 
     def generate(self):
@@ -238,6 +244,11 @@ class CPFBaseConanfile(object):
 
     def build(self):
 
+        self.run("git diff-index HEAD")
+        print("---------------------------")
+        self.run("git diff HEAD".format(self.version))
+        print("---------------------------")
+
         # Generate
         self.run(self._vcvars_command() + "{0} 3_Generate.py {1} --clean".format(self.python_command(), self.options.CPF_CONFIG))
 
@@ -260,7 +271,7 @@ class CPFBaseConanfile(object):
     def package(self):
         # Copy files into install tree.
         python = self.python_command()
-        self.run("{0} 4_Make.py {1} --target {2} --config {3}".format(
+        self.run(self._vcvars_command() + "{0} 4_Make.py {1} --target {2} --config {3}".format(
             python,
             self.options.CPF_CONFIG,
             self.options.install_target,
@@ -268,8 +279,8 @@ class CPFBaseConanfile(object):
             ))
         # Copy files to package directory
         self.copy("*", src="install")
- 
- 
+
+
     @property
     def _postfix(self):
         return self.options.debug_postfix if self.settings.build_type == "Debug" else ""
