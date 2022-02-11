@@ -62,7 +62,6 @@ class CPFBaseConanfile(object):
         "CMAKE_C_COMPILER" : "ANY",
         "CMAKE_CXX_COMPILER" : "ANY",
         "CMAKE_GENERATOR": "ANY",
-        "CMAKE_MAKE_PROGRAM": "ANY",
         "CMAKE_EXPORT_COMPILE_COMMANDS": "ANY",
         "CPF_ENABLE_ABI_API_COMPATIBILITY_REPORT_TARGETS": ["TRUE" , "FALSE"],
         "CPF_ENABLE_ABI_API_STABILITY_CHECK_TARGETS": ["TRUE" , "FALSE"],
@@ -92,7 +91,6 @@ class CPFBaseConanfile(object):
         "CMAKE_C_COMPILER" : "",
         "CMAKE_CXX_COMPILER" : "",
         "CMAKE_GENERATOR": "Ninja",  # Use ninja as default because be can get it on all platforms and it is performant.
-        "CMAKE_MAKE_PROGRAM": "", 
         "CMAKE_EXPORT_COMPILE_COMMANDS": "FALSE",
         "CPF_ENABLE_ABI_API_COMPATIBILITY_REPORT_TARGETS": "FALSE",
         "CPF_ENABLE_ABI_API_STABILITY_CHECK_TARGETS": "FALSE",
@@ -216,8 +214,8 @@ class CPFBaseConanfile(object):
         if self.options.CMAKE_CXX_COMPILER != "": 
             self.additional_cmake_variables["CMAKE_CXX_COMPILER"] = self.options.CMAKE_CXX_COMPILER
         self.additional_cmake_variables["CMAKE_GENERATOR"] = self.options.CMAKE_GENERATOR
-        if self.options.CMAKE_MAKE_PROGRAM != "":   # Setting an empty value here causes cmake errors.
-            self.additional_cmake_variables["CMAKE_MAKE_PROGRAM"] = self.options.CMAKE_MAKE_PROGRAM
+        if self.options.CMAKE_GENERATOR == "Ninja":   # Setting an empty value here causes cmake errors.
+            self.additional_cmake_variables["CMAKE_MAKE_PROGRAM"] = self.deps_cpp_info["ninja"].bin_paths[0].replace("\\","/") + "/ninja"
         self.additional_cmake_variables["CMAKE_EXPORT_COMPILE_COMMANDS"] = self.options.CMAKE_EXPORT_COMPILE_COMMANDS
         self.additional_cmake_variables["CPF_ENABLE_ABI_API_COMPATIBILITY_REPORT_TARGETS"] = self.options.CPF_ENABLE_ABI_API_COMPATIBILITY_REPORT_TARGETS
         self.additional_cmake_variables["CPF_ENABLE_ABI_API_STABILITY_CHECK_TARGETS"] = self.options.CPF_ENABLE_ABI_API_STABILITY_CHECK_TARGETS
@@ -250,10 +248,10 @@ class CPFBaseConanfile(object):
         print("---------------------------")
 
         # Generate
-        self.run(self._vcvars_command() + "{0} 3_Generate.py {1} --clean".format(self.python_command(), self.options.CPF_CONFIG))
+        self.run(self._vcvars_command() + "{0} 2_Generate.py {1} --clean".format(self.python_command(), self.options.CPF_CONFIG))
 
         # Build
-        self.run(self._vcvars_command() + "{0} 4_Make.py {1} --target {2} --config {3}".format(
+        self.run(self._vcvars_command() + "{0} 3_Make.py {1} --target {2} --config {3}".format(
             self.python_command(),
             self.options.CPF_CONFIG,
             self.options.build_target,
@@ -271,7 +269,7 @@ class CPFBaseConanfile(object):
     def package(self):
         # Copy files into install tree.
         python = self.python_command()
-        self.run(self._vcvars_command() + "{0} 4_Make.py {1} --target {2} --config {3}".format(
+        self.run(self._vcvars_command() + "{0} 3_Make.py {1} --target {2} --config {3}".format(
             python,
             self.options.CPF_CONFIG,
             self.options.install_target,
